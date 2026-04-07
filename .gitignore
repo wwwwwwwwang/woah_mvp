@@ -29,9 +29,22 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+.codex-*.log
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# sqlite
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/dev.db-shm
+/prisma/dev.db-wal
+/dev.db
+/dev.db-journal
+/dev.db-shm
+/dev.db-wal
+/src/generated/prisma
 
 # vercel
 .vercel

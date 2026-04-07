@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Pathogen {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  chineseName String
+  englishName String
+  aliases     Json
+  queryTerms  Json
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  sequences   SequenceRecord[]
+  outbreaks   OutbreakEvent[]
+  syncJobs    SyncJob[]
+  rawDocs     RawDocument[]
+}
+
+model SequenceRecord {
+  id                String   @id @default(cuid())
+  pathogenId        String
+  pathogen          Pathogen @relation(fields: [pathogenId], references: [id], onDelete: Cascade)
+  sourceSystem      String
+  sourceId          String
+  accession         String   @unique
+  title             String
+  collectionDateRaw String?
+  collectionYear    Int?
+  country           String?
+  region            String?
+  rawLocation       String?
+  host              String?
+  strainOrSubtype   String?
+  sourceUrl         String
+  sourceListUrl     String?
+  sourceDetailUrl   String?
+  navigationPath    Json?
+  rawPayload        Json
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([sourceSystem, sourceId])
+  @@index([pathogenId, collectionYear])
+  @@index([country, host])
+}
+
+model OutbreakEvent {
+  id           String    @id @default(cuid())
+  pathogenId   String
+  pathogen     Pathogen  @relation(fields: [pathogenId], references: [id], onDelete: Cascade)
+  sourceSystem String
+  sourceType   String
+  scope        String
+  sourceId     String
+  title        String
+  reportDate   DateTime?
+  eventDateRaw String?
+  country      String?
+  region       String?
+  rawLocation  String?
+  hostSpecies  String?
+  caseCount    Int?
+  deathCount   Int?
+  summary      String?
+  sourceUrl    String
+  sourceListUrl String?
+  sourceDetailUrl String?
+  navigationPath Json?
+  dedupeKey    String?
+  rawPayload   Json
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([sourceSystem, sourceId])
+  @@index([pathogenId, reportDate])
+  @@index([country, scope])
+}
+
+model SyncJob {
+  id            String    @id @default(cuid())
+  sourceSystem  String
+  pathogenId    String?
+  pathogen      Pathogen? @relation(fields: [pathogenId], references: [id], onDelete: SetNull)
+  status        String
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  fetchedCount  Int       @default(0)
+  insertedCount Int       @default(0)
+  updatedCount  Int       @default(0)
+  errorSummary  String?
+  metadata      Json?
+  logs          SyncJobLog[]
+
+  @@index([sourceSystem, startedAt])
+}
+
+model SyncJobLog {
+  id        String   @id @default(cuid())
+  syncJobId String
+  syncJob   SyncJob  @relation(fields: [syncJobId], references: [id], onDelete: Cascade)
+  level     String   @default("INFO")
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([syncJobId, createdAt])
+}
+
+model RawDocument {
+  id            String    @id @default(cuid())
+  sourceSystem  String
+  pathogenId    String?
+  pathogen      Pathogen? @relation(fields: [pathogenId], references: [id], onDelete: SetNull)
+  url           String    @unique
+  sourceListUrl String?
+  sourceDetailUrl String?
+  navigationPath Json?
+  checksum      String?
+  contentType   String?
+  extractedText String?
+  rawPayload    Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
