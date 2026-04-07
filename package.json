@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "prisma generate && prisma db push",
     "dev": "next dev",
+    "prebuild": "prisma generate",
     "build": "next build",
+    "prestart": "prisma db push",
     "start": "next start",
     "lint": "eslint src prisma vitest.config.ts",
     "test": "vitest run --coverage",

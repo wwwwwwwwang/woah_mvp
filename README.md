@@ -227,7 +227,22 @@ APP_BASE_URL="http://localhost:3000"
 | `NCBI_API_KEY` | 可选，配置后可提升 NCBI 请求限额 |
 | `APP_BASE_URL` | 当前应用访问地址 |
 
-### 3. 初始化数据库
+### 3. 启动开发服务器（推荐）
+
+```bash
+pnpm dev
+```
+
+`pnpm dev` 会自动执行 `predev`，包含以下初始化动作：
+
+- 自动生成 Prisma Client（避免 `Can't resolve '@/generated/prisma/client'`）
+- 自动执行 `prisma db push` 建表（避免 `SQLITE_ERROR: no such table: main.Pathogen`）
+
+打开 `http://localhost:3000` 即可访问。
+
+### 4. 手动初始化数据库（按需）
+
+如果你需要手动执行初始化（例如 CI、本地排障），可运行：
 
 ```bash
 pnpm prisma:generate
@@ -235,20 +250,15 @@ pnpm db:push
 pnpm db:seed
 ```
 
-### 4. 启动开发服务器
-
-```bash
-pnpm dev
-```
-
-打开 `http://localhost:3000` 即可访问。
-
 ## 常用命令
 
 | 命令 | 作用 |
 | --- | --- |
+| `pnpm run predev` | 开发前置初始化：生成 Prisma Client 并自动建表 |
 | `pnpm dev` | 启动本地开发服务器，默认访问地址为 `http://localhost:3000` |
+| `pnpm run prebuild` | 构建前置初始化：生成 Prisma Client |
 | `pnpm build` | 构建生产版本，用于发布前检查编译是否通过 |
+| `pnpm run prestart` | 生产启动前执行数据库 schema 同步 |
 | `pnpm start` | 启动已构建的生产服务，通常配合 `pnpm build` 使用 |
 | `pnpm lint` | 执行 ESLint 检查，发现代码风格与潜在问题 |
 | `pnpm test` | 运行 Vitest 测试并输出覆盖率 |
@@ -301,6 +311,47 @@ pnpm run sync:run CHINACDC H5N1
 - 数据库从 SQLite 切换到 PostgreSQL。
 - 保留现有字段设计，尤其是来源链路字段，避免正式版重做采集模型。
 - 前端可以继续使用 Next.js，也可以在保留 API 设计的前提下迁移到 `Vue 3 + Spring Boot`。
+
+## 新环境常见问题排查（已固化）
+
+### 1. `Module not found: Can't resolve '@/generated/prisma/client'`
+
+原因：Prisma Client 未生成。  
+处理：
+
+```bash
+pnpm prisma:generate
+```
+
+说明：项目已在 `predev` / `prebuild` 中自动执行生成逻辑。
+
+### 2. `SQLITE_ERROR: no such table: main.Pathogen`
+
+原因：数据库 schema 尚未推送到 SQLite。  
+处理：
+
+```bash
+pnpm db:push
+```
+
+说明：项目已在 `predev` / `prestart` 中自动执行 `db push`。
+
+### 3. `Cannot resolve environment variable: DATABASE_URL`
+
+原因：本地未配置 `.env`。  
+处理：复制 `.env.example` 为 `.env`，或直接使用默认值。  
+说明：`prisma.config.ts` 已内置默认值 `file:./dev.db`，无 `.env` 也可启动。
+
+### 4. `unknown or unexpected option: --skip-generate`
+
+原因：当前 Prisma 版本的 `prisma db push` 不支持该参数。  
+处理：使用：
+
+```bash
+prisma db push
+```
+
+说明：项目脚本已移除 `--skip-generate` 参数。
 
 ## 说明
 
